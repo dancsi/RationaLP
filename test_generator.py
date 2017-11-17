@@ -39,7 +39,7 @@ def generate_unbounded(n, m):
     u = randint(0, 2 * n, size=(n, 1))
     v = randint(0, 2 * n, size=(n, 1))
     v[v == 0] = 1
-    A = randint(0, n * m, size=(m, n))
+    A = randint(0, 100, size=(m, n))
     Av = A @ v
     A[Av[:, 0] > 0, :] *= -1
     assert (A@v < 0).all()

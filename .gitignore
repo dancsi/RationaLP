@@ -8,3 +8,6 @@
 /.vs
 /build
 /__pycache__
+inputs/current.txt
+gurobi.log
+CMakeSettings.json
