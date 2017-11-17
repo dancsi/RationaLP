@@ -10,13 +10,16 @@
 
 enum class PivotResult { FOUND, NOT_FOUND, INFEASIBLE, UNBOUNDED };
 
+/*
+Convenience base class for all pivot functions. 
+Provides helpers for finding the possible entering and leaving variables.
+*/
 class PivotFunction {
 public:
 	using idx_t = Tableau::idx_t;
 	using CandidateIndexContainer = std::vector<idx_t>;
 	using ReturnType = std::tuple<PivotResult, idx_t, idx_t>;
 
-private:
 	static CandidateIndexContainer getLeavingCandidates(Tableau& tableau, Tableau::idx_t entering) {
 		CandidateIndexContainer leaving;
 		Tableau::num_t best_ratio;
@@ -47,10 +50,12 @@ private:
 		return entering;
 	}
 
-public:
 	virtual idx_t chooseEnteringVariable(Tableau& tableau, CandidateIndexContainer& enteringCandidates) = 0;
 	virtual idx_t chooseLeavingVariable(Tableau& tableau, idx_t enteringVariable, CandidateIndexContainer& leavingCandidates) = 0;
 
+	/*
+	Calls the entering and leaving variable choice functions, while returning the appropriate status if there is no possible pivot, or the LP is unbounded.
+	*/
 	ReturnType pivotRuleHelper(
 		Tableau& tableau)
 	{
@@ -66,6 +71,9 @@ public:
 		return { PivotResult::FOUND, leaving, entering };
 	}
 
+	/*
+	Returns the pivot function result, because we want PivotFunction instances to be proper callable objects.
+	*/
 	ReturnType operator()(Tableau& tableau) {
 		return pivotRuleHelper(tableau);
 	}
@@ -73,6 +81,9 @@ public:
 
 using PivotFunctionReturnType = PivotFunction::ReturnType;
 
+/*
+Bland's rule
+*/
 class Bland : public PivotFunction {
 public:
 	idx_t chooseEnteringVariable(Tableau& tableau, CandidateIndexContainer& enteringCandidates) override {
@@ -83,6 +94,9 @@ public:
 	}
 };
 
+/*
+Random pivoting
+*/
 class Random : public PivotFunction {
 private:
 	std::mt19937 gen;
@@ -94,5 +108,31 @@ public:
 	idx_t chooseLeavingVariable(Tableau& tableau, idx_t enteringVariable, CandidateIndexContainer& leavingCandidates) override {
 		std::uniform_int_distribution<> dist(0, leavingCandidates.size() - 1);
 		return leavingCandidates[dist(gen)];
+	}
+};
+
+/*
+Maximum increase pivot rule, where the entering variable is the one that provides the greatest increase in the score.
+*/
+class MaxIncrease : public PivotFunction {
+public:
+	idx_t chooseEnteringVariable(Tableau& tableau, CandidateIndexContainer& enteringCandidates) override {
+		Tableau::num_t bestScoreIncrease(0);
+		idx_t bestEnteringCandidate = enteringCandidates[0];
+		for (auto entering : enteringCandidates) {
+			auto &&leavingCandidates = PivotFunction::getLeavingCandidates(tableau, entering);
+			if (leavingCandidates.empty()) return entering; //the LP is unbounded
+			auto leaving = leavingCandidates[0];
+			auto row = std::distance(tableau.basic.begin(), std::find(tableau.basic.begin(), tableau.basic.end(), leaving));
+			Tableau::num_t scoreIncrease = tableau.c[entering] * tableau.b[row] / tableau.A[row][entering];
+			if (scoreIncrease > bestScoreIncrease) {
+				bestScoreIncrease.swap(scoreIncrease);
+				bestEnteringCandidate = entering;
+			}
+		}
+		return bestEnteringCandidate;
+	}
+	idx_t chooseLeavingVariable(Tableau& tableau, idx_t enteringVariable, CandidateIndexContainer& leavingCandidates) override {
+		return leavingCandidates[0];
 	}
 };

@@ -8,6 +8,9 @@
 
 enum class LogLevel { CONCISE, VERBOSE };
 
+/*
+Wrapper class for Tableau, that guides the whole simplex algorithm
+*/
 class LinearProgram {
 public:
 	enum class Result { FEASIBLE_BOUNDED, FEASIBLE_UNBOUNDED, INFEASIBLE };
@@ -21,6 +24,10 @@ public:
 		logLevel(verbose ? LogLevel::VERBOSE : LogLevel::CONCISE),
 		numPivots(0) {}
 
+	/*
+	Perform one step of a single phase of the simplex algorithm.
+	Returns PivotResult::FOUND if it terminates successfully, and the appropriate condition (UNBOUNDED, NOT_FOUND) otherwise.
+	*/
 	template<typename PivotFun>
 	PivotResult step(PivotFun pivotFun) {
 		Tableau::idx_t leaving, entering;
@@ -37,6 +44,9 @@ public:
 		return PivotResult::FOUND;
 	}
 
+	/*
+	Perform a single phase of the simplex algorithm, starting from the zero-vector as the initial BFS.
+	*/
 	template<typename PivotFun>
 	Result solveOnePhase(PivotFun pivotFun) {
 		PivotResult res;
@@ -57,6 +67,9 @@ public:
 		}
 	}
 
+	/*
+	Performs the 2-phase simplex algorithm. Only launches phase 1 if the 0-vector is not a BFS.
+	*/
 	template<typename PivotFun>
 	Result solve(PivotFun& pivotFun) {
 		if (logLevel == LogLevel::VERBOSE) {
@@ -65,12 +78,10 @@ public:
 		}
 		if (!tableau.isFeasible()) {
 			tableau.addArtificialVariables();
-			std::cout << "Added artificial variables\n";
 			solveOnePhase(pivotFun);
 			if (!tableau.removeArtificialVariables()) {
 				return Result::INFEASIBLE;
 			}
-			std::cout << "Removed artificial variables\n";
 		}
 
 		return solveOnePhase(pivotFun);

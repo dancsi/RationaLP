@@ -18,23 +18,26 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
+#ifdef _DEBUG
 #define DEBUG_RATIONALS
+#endif
 
 /*
 A class representing a simplex tableau in standard form
 */
 class Tableau {
 public:
+
+	//type of numbers we operate with
 #ifndef DEBUG_RATIONALS
-	using num_t = boost::multiprecision::mpq_rational; //type of numbers we operate with
+	using num_t = boost::multiprecision::mpq_rational; 
 #else
 	using num_t = boost::multiprecision::number<boost::multiprecision::debug_adaptor<boost::multiprecision::gmp_rational>>;
 #endif
-	using vector_t = boost::numeric::ublas::vector<num_t>;
-	using matrix_t = std::vector<vector_t>;
-	using idx_t = size_t;
 
-	using zero_vector = boost::numeric::ublas::zero_vector<num_t>;
+	using vector_t = boost::numeric::ublas::vector<num_t>; //class for storing the rows of the constraint matrix, and other vectors
+	using matrix_t = std::vector<vector_t>;
+	using idx_t = size_t; //type used for indexing into the matrices and vectors
 
 	size_t n; //number of variables
 	size_t m; //number of constraints
@@ -48,12 +51,15 @@ public:
 	std::vector<idx_t> basic; //the basic variables, always indexed by the row number they appear in
 
 private:
-	vector_t c_backup;
+	vector_t c_backup; //we keep our original objective vector here, while we are doing phase 1
 
 public:
 
-	num_t dot(vector_t &x, vector_t &y) {
-		return std::inner_product(begin(x), end(x), begin(y), num_t(0));
+	/*
+	Dot product
+	*/
+	inline num_t dot(vector_t &x, vector_t &y) {
+		return boost::numeric::ublas::inner_prod(x, y);
 	}
 
 	/*
@@ -86,8 +92,10 @@ public:
 		//initialize the constraint RHS
 		copy(begin(b), end(b), begin(Tableau::b));
 
-		//initialize the constraint matrix, and pad Tableau::A with the identity matrix
-		//the basic variables are the slack variables
+		/*
+		initialize the constraint matrix, and pad Tableau::A with the identity matrix 
+		the basic variables are the slack variables
+		*/
 		idx_t i = 0;
 		for (auto&& row : A) {
 			copy(begin(row), end(row), begin(Tableau::A[i]));
@@ -116,7 +124,11 @@ public:
 		return -score;
 	}
 
+	/*
+	Perform pivoting, given the indices of the entering and leaving variables.
+	*/
 	void pivot(idx_t leaving, idx_t entering) {
+		//the entering variable becomes the basic variable of the leaving row
 		idx_t leaving_row = std::distance(basic.begin(), std::find(basic.begin(), basic.end(), leaving));
 		basic[leaving_row] = entering;
 
@@ -135,7 +147,7 @@ public:
 		score -= c[entering] * b[leaving_row];
 		c -= c[entering] * A[leaving_row];
 
-
+		//recompute the point we are at
 		for (idx_t i = 0; i < n; i++) x[i] = 0;
 		for (idx_t i = 0; i < m; i++) {
 			x[basic[i]] = b[i];
@@ -183,6 +195,7 @@ public:
 				for (idx_t j = 0; j < n - m; j++) {
 					if (A[i][j] != 0) {
 						pivot(basic[i], j);
+						break;
 					}
 				}
 			}
@@ -200,7 +213,10 @@ public:
 
 		return true;
 	}
-
+	
+	/*
+	Pretty-prints the tableau, with aligned fields.
+	*/
 	void dump(std::ostream& ost = std::cout) {
 		using namespace std;
 		vector<vector<std::string>> strings_to_print(1 + m);
@@ -236,6 +252,9 @@ public:
 		ost << endl;
 	}
 
+	/*
+	Loads the tableau from a file. Closes the program if the file is empty or nonexistent.
+	*/
 	static Tableau fromFile(const std::string& path) {
 		size_t n, m;
 		std::ifstream fin(path);

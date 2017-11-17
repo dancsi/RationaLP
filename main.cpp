@@ -13,10 +13,14 @@ namespace po = boost::program_options;
 std::map<std::string, std::function<PivotFunctionReturnType(Tableau& tableau)>> pivotFunctions;
 std::string allowedPivotFunctions;
 
+/*
+Take the pivot function callables from Pivot.h (or elsewhere), and register them with the command-line options parser
+*/
 void registerPivotFunctions() {
 	pivotFunctions = decltype(pivotFunctions){
 		{"bland", Bland()}, 
-		{"random", Random()}
+		{"random", Random()},
+		{"maxincrease", MaxIncrease()}
 	};
 	allowedPivotFunctions.clear();
 	for (auto& it : pivotFunctions) {
@@ -26,6 +30,9 @@ void registerPivotFunctions() {
 	allowedPivotFunctions.pop_back();
 }
 
+/*
+Parse the command-line options, and return them as a tuple.
+*/
 auto parseOptions(int argc, char **argv) {
 	po::options_description optionsDescription("Allowed options");
 	std::string pivotHelpText = "the pivot rule that is used. Can be one of {" + allowedPivotFunctions + "}";
