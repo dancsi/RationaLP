@@ -20,7 +20,8 @@ void registerPivotFunctions() {
 	pivotFunctions = decltype(pivotFunctions){
 		{"bland", Bland()}, 
 		{"random", Random()},
-		{"maxincrease", MaxIncrease()}
+		{"maxincrease", MaxIncrease()},
+		{"maxcoef", MaxCoef()}
 	};
 	allowedPivotFunctions.clear();
 	for (auto& it : pivotFunctions) {

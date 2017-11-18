@@ -69,7 +69,7 @@ def embedded_lp_solver(A, b, c):
 
 test_path = Path("inputs/")
 files = [f for f in test_path.iterdir() if f.is_file()]
-pivot_functions = ['bland', 'random', 'maxincrease']
+pivot_functions = ['bland', 'random', 'maxincrease', 'maxcoef']
 
 log_file = open('test_output.csv', 'w', newline='')
 log_writer = csv.writer(log_file)

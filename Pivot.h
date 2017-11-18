@@ -136,3 +136,21 @@ public:
 		return leavingCandidates[0];
 	}
 };
+
+/*
+Maximum coefficient rule
+*/
+class MaxCoef : public PivotFunction {
+public:
+	idx_t chooseEnteringVariable(Tableau& tableau, CandidateIndexContainer& enteringCandidates) override {
+		return *std::max_element(
+			enteringCandidates.begin(),
+			enteringCandidates.end(), 
+			[&tableau](auto lhs, auto rhs) {return tableau.c[lhs] > tableau.c[rhs]; }
+		);
+	}
+	idx_t chooseLeavingVariable(Tableau& tableau, idx_t enteringVariable, CandidateIndexContainer& leavingCandidates) override {
+		std::uniform_int_distribution<> dist(0, leavingCandidates.size() - 1);
+		return leavingCandidates[0];
+	}
+};
