@@ -1,6 +1,8 @@
+import csv
 from fractions import Fraction
 from pathlib import Path
 from subprocess import PIPE, run
+from time import time
 
 import numpy as np
 import pytest
@@ -69,14 +71,20 @@ test_path = Path("inputs/")
 files = [f for f in test_path.iterdir() if f.is_file()]
 pivot_functions = ['bland', 'random', 'maxincrease']
 
+log_file = open('test_output.csv', 'w', newline='')
+log_writer = csv.writer(log_file)
+log_writer.writerow(['name', 'pivot', 'iters', 'time'])
 
 @pytest.mark.parametrize('path,pivot_fun', [(file, fun) for file in files for fun in pivot_functions])
 def test_file(path, pivot_fun):
     c, A, b = read_file(path)
     expected_status, expected_sol = embedded_lp_solver(A, b, c)
+    start_time = time()
     output_str = run(["./build/RationaLP", str(path), '--pivot', pivot_fun],
                      stdout=PIPE, encoding='ascii').stdout
+    elapsed_time = time() - start_time
     problem_line = search(r'(infeasible|unbounded)', output_str)
+    num_iterations = 0
     if problem_line is not None:
         output = problem_line.group(0)
         assert output == expected_status
@@ -85,3 +93,9 @@ def test_file(path, pivot_fun):
         output = Fraction(result_line.group(1).strip())
         output_fl = float(output)
         assert abs(output_fl - expected_sol) / abs(output_fl) < 0.01
+
+        num_iterations_line = search(
+            r'number of pivots is: (.*)\nThe', output_str)
+        num_iterations = int(num_iterations_line.group(1).strip())
+    
+    log_writer.writerow([path.stem, pivot_fun, num_iterations, elapsed_time])

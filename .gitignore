@@ -11,3 +11,4 @@
 inputs/current.txt
 gurobi.log
 CMakeSettings.json
+test_output.csv
