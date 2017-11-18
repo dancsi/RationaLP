@@ -26,7 +26,7 @@ class RationLP:
             for row in self.A:
                 self.print_row(row, fout)
 
-
+# Adapted from https://math.stackexchange.com/a/244164/76028
 def generate_feasible(n, m):
     v = randint(0, 2 * n, size=(n, 1))
     A = randint(0, n * m, size=(m, n))
