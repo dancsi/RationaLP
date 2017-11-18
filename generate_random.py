@@ -9,8 +9,8 @@ class RationLP:
         self.A = [[Fraction(x) for x in row] for row in A]
         self.b = [Fraction(x) for x in b.flat]
         self.c = [Fraction(x) for x in c.flat]
-        self.n = len(c)
-        self.m = len(b)
+        self.n = len(self.c)
+        self.m = len(self.b)
 
     def print_row(self, vec, fout):
         for x in vec:
@@ -51,7 +51,7 @@ def generate_unbounded(n, m):
 
 
 def generate_infeasible(n, m):
-    A, b, c = generate_unbounded(n, m)
+    A, b, c = generate_unbounded(m, n)
     return -A.T, -c, -b
 
 
@@ -59,16 +59,16 @@ def pack_save(fname, A, b, c):
     prog = RationLP(A, b, c)
     prog.save(fname)
 
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("The program needs two integer command line arguments")
+        sys.exit(1)
 
-if len(sys.argv) != 3:
-    print("The program needs two integer command line arguments")
-    sys.exit(1)
+    n = int(sys.argv[1])
+    m = int(sys.argv[2])
 
-n = int(sys.argv[1])
-m = int(sys.argv[2])
+    name_template = 'inputs/test_{{}}_{}x{}.txt'.format(m, n)
 
-name_template = 'inputs/test_{{}}_{}x{}.txt'.format(m, n)
-
-pack_save(name_template.format('feasible'), *generate_feasible(n, m))
-pack_save(name_template.format('infeasible'), *generate_infeasible(n, m))
-pack_save(name_template.format('unbounded'), *generate_unbounded(n, m))
+    pack_save(name_template.format('feasible'), *generate_feasible(n, m))
+    pack_save(name_template.format('infeasible'), *generate_infeasible(n, m))
+    pack_save(name_template.format('unbounded'), *generate_unbounded(n, m))

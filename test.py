@@ -73,7 +73,7 @@ pivot_functions = ['bland', 'random', 'maxincrease']
 
 log_file = open('test_output.csv', 'w', newline='')
 log_writer = csv.writer(log_file)
-log_writer.writerow(['name', 'pivot', 'iters', 'time'])
+log_writer.writerow(['name', 'pivot', 'iters', 'time', 'type'])
 
 @pytest.mark.parametrize('path,pivot_fun', [(file, fun) for file in files for fun in pivot_functions])
 def test_file(path, pivot_fun):
@@ -98,4 +98,4 @@ def test_file(path, pivot_fun):
             r'number of pivots is: (.*)\nThe', output_str)
         num_iterations = int(num_iterations_line.group(1).strip())
     
-    log_writer.writerow([path.stem, pivot_fun, num_iterations, elapsed_time])
+    log_writer.writerow([path.stem, pivot_fun, num_iterations, elapsed_time, expected_status])
