@@ -10,21 +10,22 @@
 
 namespace po = boost::program_options;
 
-std::map<std::string, std::function<PivotFunctionReturnType(Tableau& tableau)>> pivotFunctions;
+std::map<std::string, std::function<PivotFunctionReturnType(Tableau &tableau)>> pivotFunctions;
 std::string allowedPivotFunctions;
 
 /*
 Take the pivot function callables from Pivot.h (or elsewhere), and register them with the command-line options parser
 */
-void registerPivotFunctions() {
+void registerPivotFunctions()
+{
 	pivotFunctions = decltype(pivotFunctions){
-		{"bland", Bland()}, 
+		{"bland", Bland()},
 		{"random", Random()},
 		{"maxincrease", MaxIncrease()},
-		{"maxcoef", MaxCoef()}
-	};
+		{"maxcoef", MaxCoef()}};
 	allowedPivotFunctions.clear();
-	for (auto& it : pivotFunctions) {
+	for (auto &it : pivotFunctions)
+	{
 		allowedPivotFunctions += it.first;
 		allowedPivotFunctions += ',';
 	}
@@ -34,39 +35,40 @@ void registerPivotFunctions() {
 /*
 Parse the command-line options, and return them as a tuple.
 */
-auto parseOptions(int argc, char **argv) {
+auto parseOptions(int argc, char **argv)
+{
 	po::options_description optionsDescription("Allowed options");
 	std::string pivotHelpText = "the pivot rule that is used. Can be one of {" + allowedPivotFunctions + "}";
-	optionsDescription.add_options()
-		("verbose", po::value<bool>()->implicit_value(true)->default_value(false), "verbose output")
-		("pivot", po::value<std::string>()->default_value("bland"), pivotHelpText.c_str())
-		("input", po::value<std::string>(), "input linear program")
-		;
+	optionsDescription.add_options()("verbose", po::value<bool>()->implicit_value(true)->default_value(false), "verbose output")("pivot", po::value<std::string>()->default_value("maxincrease"), pivotHelpText.c_str())("input", po::value<std::string>(), "input linear program");
 	po::positional_options_description positionalOptionsDescription;
 	positionalOptionsDescription.add("input", -1);
 
 	po::variables_map variablesMap;
 	po::store(
 		po::command_line_parser(argc, argv)
-		.options(optionsDescription)
-		.positional(positionalOptionsDescription)
-		.run(),
+			.options(optionsDescription)
+			.positional(positionalOptionsDescription)
+			.run(),
 		variablesMap);
 	po::notify(variablesMap);
 
 	std::string inputPath;
-	if (variablesMap.count("input")) {
+	if (variablesMap.count("input"))
+	{
 		inputPath = variablesMap["input"].as<std::string>();
 	}
-	else {
-		std::cout << "You must provide a valid path\n"<<optionsDescription;
+	else
+	{
+		std::cout << "You must provide a valid path\n"
+				  << optionsDescription;
 		std::exit(1);
 	}
 
 	auto verboseOutput = variablesMap["verbose"].as<bool>();
 	auto pivotAlgorithm = variablesMap["pivot"].as<std::string>();
 
-	if (pivotFunctions.find(pivotAlgorithm) == pivotFunctions.end()) {
+	if (pivotFunctions.find(pivotAlgorithm) == pivotFunctions.end())
+	{
 		std::cout << "Invalid pivot algorithm \"" << pivotAlgorithm << "\"\n";
 		std::cout << "Allowed values are {" << allowedPivotFunctions << "}\n";
 		std::exit(1);
@@ -89,7 +91,8 @@ int main(int argc, char **argv)
 
 	auto result = lp.solve(pivotFunctions[pivotAlgorithm]);
 
-	switch (result) {
+	switch (result)
+	{
 	case LinearProgram::Result::INFEASIBLE:
 		std::cout << "The linear program is infeasible\n";
 		break;
